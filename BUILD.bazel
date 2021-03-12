@@ -1,9 +1,10 @@
-load("@io_bazel_rules_docker//container:image.bzl", "container_image")
-load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit")
-load("@io_bazel_rules_docker//python3:image.bzl", "py3_image")
 load("@py_deps//:requirements.bzl", "requirement")
-load("@rules_pkg//:pkg.bzl", "pkg_tar")
-load("@rules_python//python:defs.bzl", "py_runtime_pair")
+load("@rules_python//python:defs.bzl", "py_binary", "py_runtime", "py_runtime_pair", "py_test")
+
+# load("@rules_pkg//:pkg.bzl", "pkg_tar")
+# load("@io_bazel_rules_docker//container:image.bzl", "container_image")
+# load("@io_bazel_rules_docker//docker/util:run.bzl", "container_run_and_commit")
+# load("@io_bazel_rules_docker//python3:image.bzl", "py3_image")
 
 py_runtime(
     name = "python3_runtime",
@@ -28,8 +29,8 @@ toolchain(
 py_binary(
     name = "main",
     srcs = ["main.py"],
-    deps = [requirement("psycopg2-binary")],
     python_version = "PY3",
+    deps = [requirement("psycopg2-binary")],
 )
 
 py_test(
@@ -52,49 +53,48 @@ py_test(
 
 # Package requirements.txt into a tar so we can load it into the container
 # image.
-pkg_tar(
-    name = "py_requirements",
-    package_dir = "/etc",
-    srcs = ["//:requirements.txt"],
-    mode = "0644",
-    visibility = ["//visibility:private"],
-)
+# pkg_tar(
+#     name = "py_requirements",
+#     srcs = ["//:requirements.txt"],
+#     mode = "0644",
+#     package_dir = "/etc",
+#     visibility = ["//visibility:private"],
+# )
 
-container_image(
-    name = "python3.8.3_base_image",
-    base = "@python3.8.3_slim_buster//image",
-    tars = [":py_requirements"],
-    # slim-buster image places python3 under /usr/local/bin, but the host
-    # toolchain used by py3_image might use /usr/bin instead.
-    symlinks = {
-        "/usr/bin/python": "/usr/local/bin/python",
-        "/usr/bin/python3": "/usr/local/bin/python3",
-    },
-    stamp = True,
-    creation_time = "{BUILD_TIMESTAMP}",
-)
+# container_image(
+#     name = "python3.8.3_base_image",
+#     base = "@python3.8.3_slim_buster//image",
+#     creation_time = "{BUILD_TIMESTAMP}",
+#     stamp = True,
+#     # slim-buster image places python3 under /usr/local/bin, but the host
+#     # toolchain used by py3_image might use /usr/bin instead.
+#     symlinks = {
+#         "/usr/bin/python": "/usr/local/bin/python",
+#         "/usr/bin/python3": "/usr/local/bin/python3",
+#     },
+#     tars = [":py_requirements"],
+# )
 
 # Use pip to install the dependencies inside the container.
-container_run_and_commit(
-    name = "python3.8.3_base_image_with_deps",
-    image = "python3.8.3_base_image.tar",
-    commands = [
-        "pip3 install --default-timeout=180 -r /etc/requirements.txt",
-    ],
-)
+# container_run_and_commit(
+#     name = "python3.8.3_base_image_with_deps",
+#     image = "python3.8.3_base_image.tar",
+#     commands = [
+#         "pip3 install --default-timeout=180 -r /etc/requirements.txt",
+#     ],
+# )
 
-py3_image(
-    name = "main_image",
-    srcs = ["main.py"],
-    main = "main.py",
+# py3_image(
+#     name = "main_image",
+#     srcs = ["main.py"],
+#     base = ":python3.8.3_base_image_with_deps",
 
-    # Internal dependencies go here.
-    # External dependencies are handled by pip install in the container.
-    deps = [],
+#     # Bazel injected init files can break python import.
+#     # https://github.com/bazelbuild/rules_python/issues/55
+#     legacy_create_init = False,
+#     main = "main.py",
 
-    base = ":python3.8.3_base_image_with_deps",
-
-    # Bazel injected init files can break python import.
-    # https://github.com/bazelbuild/rules_python/issues/55
-    legacy_create_init = False,
-)
+#     # Internal dependencies go here.
+#     # External dependencies are handled by pip install in the container.
+#     deps = [],
+# )
