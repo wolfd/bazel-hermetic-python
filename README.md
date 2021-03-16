@@ -1,3 +1,7 @@
+# NOTE
+
+This readme is from the original and is not updated for the usage of rules_foreign_cc
+
 # Hermetic Python in Bazel
 
 This repo demonstrates how to build a python interpreter from source and use it
