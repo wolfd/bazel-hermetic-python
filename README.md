@@ -1,6 +1,6 @@
 # NOTE
 
-This readme is from the original and is not updated for the usage of rules_foreign_cc
+This doesn't really work yet.
 
 # Hermetic Python in Bazel
 
